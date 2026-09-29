@@ -1,0 +1,480 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Interactive Visit Itinerary Template</title>
+<style>
+    /* Print optimizations */
+    @media print {
+        @page {
+            size: A4;
+            margin: 5mm; /* Narrow margins to allow full-width stretch */
+        }
+        body {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            background-color: #ffffff !important;
+        }
+        .no-print {
+            display: none !important;
+        }
+        .page-container {
+            margin: 0 !important;
+            padding: 5mm !important;
+            box-shadow: none !important;
+            max-width: 100% !important;
+        }
+        .top-bar {
+            margin: -5mm -5mm 20px -5mm !important;
+        }
+    }
+    
+    body {
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        color: #1a1a1a;
+        box-sizing: border-box;
+        background-color: #f0f2f5; 
+    }
+    
+    .page-container {
+        position: relative;
+        max-width: 210mm;
+        min-height: 297mm;
+        margin: 20px auto;
+        background-color: #ffffff;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        padding: 8mm; /* Reduced padding to make content wider */
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    /* Watermark styling */
+    .watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -40%);
+        width: 75%;
+        height: 75%;
+        background-image: url('UNO.png');
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: contain;
+        opacity: 0.08; /* Very subtle so it doesn't interrupt reading */
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    /* Ensuring content stays above the watermark */
+    .top-bar, .main-layout, .coaching-message, .add-row-btn {
+        position: relative;
+        z-index: 2;
+    }
+
+    .instruction-banner {
+        background-color: #e3f2fd;
+        border-left: 4px solid #1976d2;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        font-size: 14px;
+        color: #0d47a1;
+        border-radius: 4px;
+    }
+
+    *, *::before, *::after {
+        box-sizing: border-box;
+    }
+    
+    .top-bar {
+        background-color: #000000;
+        color: #ffffff;
+        margin: -8mm -8mm 25px -8mm; /* Stretches to edges matching new padding */
+        padding: 25px 8mm;
+        text-align: center;
+        border-bottom: 6px solid #d71920;
+    }
+    .top-bar h1 {
+        margin: 0;
+        font-size: 26pt;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        font-weight: 800;
+        outline: none;
+    }
+    .top-bar h2 {
+        margin: 8px 0 0 0;
+        font-size: 14pt;
+        font-weight: 400;
+        letter-spacing: 1px;
+        color: #e0e0e0;
+        outline: none;
+    }
+    
+    [contenteditable="true"] {
+        outline: none;
+        transition: background-color 0.2s;
+    }
+    [contenteditable="true"]:hover {
+        background-color: rgba(215, 25, 32, 0.05);
+        cursor: text;
+        border-radius: 3px;
+    }
+    [contenteditable="true"]:focus {
+        background-color: rgba(215, 25, 32, 0.1);
+        border-bottom: 1px dashed #d71920;
+    }
+    
+    .main-layout {
+        display: table;
+        width: 100%;
+        border-spacing: 20px 0;
+        margin-left: -10px;
+        margin-right: -10px;
+    }
+    .column-left {
+        display: table-cell;
+        width: 35%;
+        vertical-align: top;
+        background-color: rgba(249, 249, 249, 0.85); /* slight transparency over watermark */
+        padding: 20px;
+        border-radius: 8px;
+        border: 1px solid #ececec;
+    }
+    .column-right {
+        display: table-cell;
+        width: 65%;
+        vertical-align: top;
+        background-color: rgba(255, 255, 255, 0.6); /* allows watermark to show through slightly */
+    }
+    .section-title {
+        font-size: 15pt;
+        font-weight: 800;
+        color: #000000;
+        text-transform: uppercase;
+        border-bottom: 2px solid #000000;
+        padding-bottom: 6px;
+        margin-bottom: 18px;
+        margin-top: 0;
+        letter-spacing: 1px;
+    }
+    .info-group {
+        margin-bottom: 14px;
+    }
+    .info-label {
+        font-size: 8.5pt;
+        text-transform: uppercase;
+        color: #777777;
+        margin-bottom: 3px;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+    .info-value {
+        font-size: 12pt;
+        font-weight: bold;
+        color: #111111;
+        min-height: 18px;
+    }
+    .snapshot-box {
+        margin-top: 25px;
+        background-color: #ffffff;
+        border-left: 4px solid #d71920;
+        padding: 12px 15px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .snapshot-title {
+        font-size: 10pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        color: #000000;
+    }
+    .snapshot-text {
+        font-size: 10pt;
+        line-height: 1.5;
+        color: #444444;
+        margin: 0;
+        min-height: 80px;
+    }
+    .keys-box {
+        margin-top: 20px;
+    }
+    .keys-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+    }
+    .keys-list li {
+        position: relative;
+        padding-left: 20px;
+        margin-bottom: 8px;
+        font-size: 10.5pt;
+        font-weight: bold;
+        color: #222222;
+        min-height: 16px;
+    }
+    .keys-list li::before {
+        content: "■";
+        color: #d71920;
+        position: absolute;
+        left: 0;
+        top: 0;
+        font-size: 12px;
+    }
+    .schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .schedule-table th, .schedule-table td {
+        padding: 14px 8px;
+        border-bottom: 1px solid #e5e5e5;
+        vertical-align: top;
+    }
+    .time-col {
+        width: 20%;
+        font-weight: 800;
+        color: #000000;
+        font-size: 11pt;
+        white-space: nowrap;
+    }
+    .event-col {
+        width: 80%;
+        font-size: 11.5pt;
+        color: #1a1a1a;
+        line-height: 1.4;
+    }
+    .checkbox {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid #cccccc;
+        margin-right: 12px;
+        border-radius: 3px;
+        vertical-align: text-bottom;
+        background-color: #ffffff;
+    }
+    
+    .add-row-btn {
+        background-color: #d71920;
+        color: #ffffff;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-top: 15px;
+        font-size: 14px;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .add-row-btn:hover {
+        background-color: #a81218;
+    }
+    
+    .remove-row-btn {
+        color: #999;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+        padding: 0 5px;
+        visibility: hidden;
+    }
+    tr:hover .remove-row-btn {
+        visibility: visible;
+    }
+    .remove-row-btn:hover {
+        color: #d71920;
+    }
+
+    /* Coaching Message Box */
+    .coaching-message {
+        margin-top: 30px;
+        background-color: rgba(255, 255, 255, 0.85); /* Keeps text legible over watermark */
+        border-top: 4px solid #d71920;
+        padding: 20px;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .coaching-title {
+        font-size: 12pt;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #000000;
+        margin-top: 0;
+        margin-bottom: 10px;
+        letter-spacing: 1px;
+    }
+    .coaching-text {
+        font-size: 11pt;
+        line-height: 1.5;
+        color: #333333;
+        margin: 0;
+        min-height: 40px;
+    }
+</style>
+</head>
+<body>
+    <div class="no-print" style="max-width: 210mm; margin: 20px auto 0 auto;">
+        <div class="instruction-banner">
+            <strong>How to use this template:</strong><br>
+            1. Ensure the image <strong>UNO.png</strong> is saved in the exact same folder as this HTML file so the watermark loads correctly.<br>
+            2. Edit text normally, use the "Add Time Slot" button, and utilize the new Coaching Staff Message section at the bottom.<br>
+            3. Print to PDF (Ctrl/Cmd + P). <strong>Keep "Background graphics" checked!</strong>
+        </div>
+    </div>
+
+    <div class="page-container">
+        <!-- Watermark -->
+        <div class="watermark"></div>
+
+        <div class="top-bar">
+            <h1 contenteditable="true">Omaha Mavs Baseball</h1>
+            <h2 contenteditable="true">Prospect Visit Itinerary &bull; [Date]</h2>
+        </div>
+        
+        <div class="main-layout">
+            <!-- Left Column: Athlete Profile -->
+            <div class="column-left">
+                <h2 class="section-title">Athlete Profile</h2>
+                
+                <div class="info-group">
+                    <div class="info-label">Prospective Student Athlete</div>
+                    <div class="info-value" contenteditable="true">[Athlete Name]</div>
+                </div>
+                
+                <div class="info-group">
+                    <div class="info-label">Position</div>
+                    <div class="info-value" contenteditable="true">[Position]</div>
+                </div>
+                
+                <div class="info-group">
+                    <div class="info-label">Accompanied By</div>
+                    <div class="info-value" contenteditable="true">[Family/Guests]</div>
+                </div>
+                
+                <div class="info-group">
+                    <div class="info-label">Current School</div>
+                    <div class="info-value" contenteditable="true">[High School / JuCo]</div>
+                </div>
+                
+                <div class="info-group">
+                    <div class="info-label">Academics</div>
+                    <div class="info-value" contenteditable="true">[GPA] &bull; [Major]</div>
+                </div>
+                
+                <div class="keys-box">
+                    <div class="snapshot-title">Strategic Keys</div>
+                    <ul class="keys-list" id="keys-list">
+                        <li contenteditable="true">[Key focus/priority 1]</li>
+                        <li contenteditable="true">[Key focus/priority 2]</li>
+                        <li contenteditable="true">[Key focus/priority 3]</li>
+                    </ul>
+                </div>
+                
+                <div class="snapshot-box">
+                    <div class="snapshot-title">Scouting Snapshot</div>
+                    <p class="snapshot-text" contenteditable="true">
+                        [Enter a brief scouting summary, relational ties, personality traits, and development priorities here. This gives the staff a quick overview of who the athlete is and what matters to them.]
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Right Column: Itinerary -->
+            <div class="column-right">
+                <h2 class="section-title">Schedule of Events</h2>
+                
+                <table class="schedule-table" id="schedule-table">
+                    <tbody>
+                        <tr>
+                            <td class="time-col" contenteditable="true">[0:00 PM]</td>
+                            <td class="event-col"><span class="checkbox"></span><span contenteditable="true">[Meet coaching staff at Tal Anderson Field]</span></td>
+                            <td class="no-print" style="width: 20px; padding: 14px 0; border-bottom: 1px solid #e5e5e5;"><button class="remove-row-btn" onclick="removeRow(this)" title="Delete Row">×</button></td>
+                        </tr>
+                        <tr>
+                            <td class="time-col" contenteditable="true">[0:00 PM]</td>
+                            <td class="event-col"><span class="checkbox"></span><span contenteditable="true">[Depart for Campus / Arena]</span></td>
+                            <td class="no-print" style="width: 20px; padding: 14px 0; border-bottom: 1px solid #e5e5e5;"><button class="remove-row-btn" onclick="removeRow(this)" title="Delete Row">×</button></td>
+                        </tr>
+                        <tr>
+                            <td class="time-col" contenteditable="true">[0:00 PM]</td>
+                            <td class="event-col"><span class="checkbox"></span><span contenteditable="true">[Recruit Photoshoot]</span></td>
+                            <td class="no-print" style="width: 20px; padding: 14px 0; border-bottom: 1px solid #e5e5e5;"><button class="remove-row-btn" onclick="removeRow(this)" title="Delete Row">×</button></td>
+                        </tr>
+                        <tr>
+                            <td class="time-col" contenteditable="true">[0:00 PM]</td>
+                            <td class="event-col"><span class="checkbox"></span><span contenteditable="true">[Tour Biomechanic Lab]</span></td>
+                            <td class="no-print" style="width: 20px; padding: 14px 0; border-bottom: 1px solid #e5e5e5;"><button class="remove-row-btn" onclick="removeRow(this)" title="Delete Row">×</button></td>
+                        </tr>
+                        <tr>
+                            <td class="time-col" contenteditable="true">[0:00 PM]</td>
+                            <td class="event-col"><span class="checkbox"></span><span contenteditable="true">[Show weight room / Meet Strength Staff]</span></td>
+                            <td class="no-print" style="width: 20px; padding: 14px 0; border-bottom: 1px solid #e5e5e5;"><button class="remove-row-btn" onclick="removeRow(this)" title="Delete Row">×</button></td>
+                        </tr>
+                        <tr>
+                            <td class="time-col" contenteditable="true">[0:00 PM]</td>
+                            <td class="event-col"><span class="checkbox"></span><span contenteditable="true">[Show Academic Excellence Room]</span></td>
+                            <td class="no-print" style="width: 20px; padding: 14px 0; border-bottom: 1px solid #e5e5e5;"><button class="remove-row-btn" onclick="removeRow(this)" title="Delete Row">×</button></td>
+                        </tr>
+                        <tr>
+                            <td class="time-col" contenteditable="true">[0:00 PM]</td>
+                            <td class="event-col"><span class="checkbox"></span><span contenteditable="true">[Return to Tal Anderson Field]</span></td>
+                            <td class="no-print" style="width: 20px; padding: 14px 0; border-bottom: 1px solid #e5e5e5;"><button class="remove-row-btn" onclick="removeRow(this)" title="Delete Row">×</button></td>
+                        </tr>
+                        <tr>
+                            <td class="time-col" contenteditable="true">[0:00 PM]</td>
+                            <td class="event-col"><span class="checkbox"></span><span contenteditable="true">[Meet with staff in press box]</span></td>
+                            <td class="no-print" style="width: 20px; padding: 14px 0; border-bottom: 1px solid #e5e5e5;"><button class="remove-row-btn" onclick="removeRow(this)" title="Delete Row">×</button></td>
+                        </tr>
+                        <tr>
+                            <td class="time-col" contenteditable="true">[0:00 PM]</td>
+                            <td class="event-col"><span class="checkbox"></span><span contenteditable="true">[Wrap up / Family departs]</span></td>
+                            <td class="no-print" style="width: 20px; padding: 14px 0; border-bottom: 1px solid #e5e5e5;"><button class="remove-row-btn" onclick="removeRow(this)" title="Delete Row">×</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <!-- Add Button -->
+                <button class="no-print add-row-btn" onclick="addRow()">
+                    <span style="font-size: 16px;">+</span> Add Time Slot
+                </button>
+            </div>
+        </div>
+        
+        <!-- Coaching Staff Message Section -->
+        <div class="coaching-message">
+            <h3 class="coaching-title">A Message From The Coaching Staff</h3>
+            <p class="coaching-text" contenteditable="true">
+                [Type a personalized message to the athlete and their family here. E.g., "We are incredibly excited to host you on campus. We believe Omaha is a place where you can develop into a premium player and achieve your ultimate goals on and off the field. Enjoy the visit!"]
+            </p>
+        </div>
+    </div>
+
+    <!-- Script to handle dynamic rows -->
+    <script>
+        function addRow() {
+            const tbody = document.querySelector('#schedule-table tbody');
+            const newRow = document.createElement('tr');
+            
+            newRow.innerHTML = `
+                <td class="time-col" contenteditable="true">[0:00 PM]</td>
+                <td class="event-col"><span class="checkbox"></span><span contenteditable="true">[New Event]</span></td>
+                <td class="no-print" style="width: 20px; padding: 14px 0; border-bottom: 1px solid #e5e5e5;">
+                    <button class="remove-row-btn" onclick="removeRow(this)" title="Delete Row">×</button>
+                </td>
+            `;
+            
+            tbody.appendChild(newRow);
+        }
+
+        function removeRow(btn) {
+            const row = btn.closest('tr');
+            row.remove();
+        }
+    </script>
+</body>
+</html>
